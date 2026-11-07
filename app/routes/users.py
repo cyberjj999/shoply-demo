@@ -63,6 +63,7 @@ def search_users():
     name = request.args.get("name", "")
     session = get_session()
     rows = session.execute(
-        text(f"SELECT id, username, role FROM users WHERE username LIKE '%{name}%'")
+        text("SELECT id, username, role FROM users WHERE username LIKE :pattern"),
+        {"pattern": f"%{name}%"}
     )
     return jsonify([dict(r._mapping) for r in rows])
