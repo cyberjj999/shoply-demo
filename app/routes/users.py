@@ -38,6 +38,16 @@ def get_user(user_id: int):
     return jsonify(user.to_dict(include_email=True))
 
 
+@users_bp.route("/search", methods=["GET"])
+@require_role("manager")
+def search_users():
+    """List all users. Managers and admins only."""
+    query = request.args.get("q", "")
+    session = get_session()
+    users = session.query(User).filter(User.name.like("%" + query + "%")).order_by(User.id).all()
+    return jsonify([u.to_dict() for u in users])
+
+
 @users_bp.route("/<int:user_id>", methods=["PUT"])
 @require_auth
 def update_user(user_id: int):
