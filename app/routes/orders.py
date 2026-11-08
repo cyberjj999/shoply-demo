@@ -54,3 +54,14 @@ def all_orders():
     session = get_session()
     orders = session.query(Order).order_by(Order.created_at.desc()).all()
     return jsonify([o.to_dict() for o in orders])
+
+
+@orders_bp.route("/<int:id>", methods=["GET"])
+@require_auth
+def get_order(id):
+    """Retrieve details of the specified order."""
+    session = get_session()
+    order = session.query(Order).filter(Order.id == id).first()
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    return jsonify(order.to_dict())
