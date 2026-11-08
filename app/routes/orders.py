@@ -64,4 +64,6 @@ def get_order(id: int):
     order = session.query(Order).filter(Order.id == id).first()
     if not order:
         abort(404)
+    if not is_owner_or_admin(g.current_user, order.user_id):
+        return jsonify({"error": "Forbidden"}), 403
     return jsonify(order.to_dict())
