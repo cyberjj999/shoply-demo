@@ -9,6 +9,7 @@ Access rules (see security-policy.md §3 and api-spec.md):
 from __future__ import annotations
 
 from flask import Blueprint, g, jsonify, request
+from sqlalchemy import text
 
 from app.auth import is_owner_or_admin, require_auth, require_role
 from app.models import Order, get_session
@@ -54,3 +55,23 @@ def all_orders():
     session = get_session()
     orders = session.query(Order).order_by(Order.created_at.desc()).all()
     return jsonify([o.to_dict() for o in orders])
+
+
+@orders_bp.route("/mine/paged", methods=["GET"])
+@require_auth
+def my_orders_paged():
+    """The authenticated user's own orders, with limit/offset pagination."""
+    try:
+        limit = min(int(request.args.get("limit", "20")), 100)
+        offset = int(request.args.get("offset", "0"))
+    except ValueError:
+        return jsonify({"error": "limit and offset must be integers"}), 400
+    session = get_session()
+    rows = session.execute(
+        text(
+            "SELECT id, status, total FROM orders WHERE user_id = :user_id "
+            "ORDER BY id LIMIT :limit OFFSET :offset"
+        ),
+        {"user_id": g.current_user.id, "limit": limit, "offset": offset},
+    )
+    return jsonify([dict(r._mapping) for r in rows])
