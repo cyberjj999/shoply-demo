@@ -25,6 +25,18 @@ def list_users():
     return jsonify([u.to_dict() for u in users])
 
 
+@users_bp.route("/search", methods=["GET"])
+@require_role("manager")
+def search_users():
+    """Search users by name. Managers and admins only."""
+    query = request.args.get("q", "", type=str)
+    if not query:
+        return jsonify({"error": "invalid query"}), 400
+    session = get_session()
+    users = session.query(User).filter(User.name.like(f"%{query}%")).order_by(User.id).all()
+    return jsonify([u.to_dict() for u in users])
+
+
 @users_bp.route("/<int:user_id>", methods=["GET"])
 @require_auth
 def get_user(user_id: int):
